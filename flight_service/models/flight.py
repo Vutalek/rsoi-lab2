@@ -5,6 +5,12 @@ from pydantic import BaseModel
 class FlightPost(BaseModel):
     flight_number: str
     datetime: dtime
-    from_airport_id: int | None
-    to_airport_id: int | None
+    from_airport_id: int | None = None
+    to_airport_id: int | None = None
     price: int
+
+class FlightPatch(BaseModel):
+    datetime: dtime | None = None
+    from_airport_id: int | None = None
+    to_airport_id: int | None = None
+    price: int | None = None

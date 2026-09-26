@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from utils import construct_engine
 from orm import FlightORM
-from models import FlightPost
+from models import FlightPost, FlightPatch
 
 app = FastAPI()
 
@@ -80,3 +80,17 @@ def make_flight(body: FlightPost):
                 "Location": f"/api/v1/flights/{body.flight_number}"
             }
     )
+
+@app.patch("/api/v1/flights/{flight_number}")
+def update_flight(flight_number: str, body: FlightPatch):
+    get_flight = select(FlightORM).where(FlightORM.flight_number == flight_number)
+    with Session(engine) as session:
+        flight = session.scalar(get_flight)
+        if not flight:
+            raise HTTPException(404, detail="Flight not found")
+        for field, value in body.model_dump(exclude_unset=True).items():
+            setattr(flight, field, value)
+
+        session.commit()
+        session.refresh(flight)
+    return flight

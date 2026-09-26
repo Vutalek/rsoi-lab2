@@ -1,1 +1,1 @@
-from .flight import FlightPost
+from .flight import FlightPost, FlightPatch
