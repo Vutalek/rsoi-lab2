@@ -11,13 +11,22 @@ services:
       FLIGHT_SERVICE_DB_NAME: ${FLIGHT_SERVICE_DB_NAME}
     ports:
       - 8060:8060
+    depends_on:
+      postgres:
+        condition: service_started
 
-# The commented out section below is an example of how to define a PostgreSQL
-# database that your application can use. `depends_on` tells Docker Compose to
-# start the database before your application. The `db-data` volume persists the
-# database data between container restarts. The `db-password` secret is used
-# to set the database password. You must create `db/password.txt` and add
-# a password of your choosing to it before running `docker compose up`.
+  ticket_service:
+    build:
+      context: ticket_service
+    environment:
+      TICKET_SERVICE_DB_PROTOCOL: ${TICKET_SERVICE_DB_PROTOCOL}
+      TICKET_SERVICE_DB_USER: ${TICKET_SERVICE_DB_USER}
+      TICKET_SERVICE_DB_PASSWORD: ${TICKET_SERVICE_DB_PASSWORD}
+      TICKET_SERVICE_DB_HOST: postgres
+      TICKET_SERVICE_DB_PORT: ${TICKET_SERVICE_DB_PORT}
+      TICKET_SERVICE_DB_NAME: ${TICKET_SERVICE_DB_NAME}
+    ports:
+      - 8070:8070
     depends_on:
       postgres:
         condition: service_started
