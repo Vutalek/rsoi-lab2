@@ -1,13 +1,14 @@
 import os
 from typing import Annotated
 
-from fastapi import FastAPI, Query, HTTPException
+from fastapi import FastAPI, Query, HTTPException, Response, status
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from utils import construct_engine
 from orm import FlightORM
+from models import FlightPost
 
 app = FastAPI()
 
@@ -54,3 +55,28 @@ def get_flight(flight_number: str):
             "price": flight.price
         }
     return flight
+
+@app.post("/api/v1/flights")
+def make_flight(body: FlightPost):
+    get_next_id = select(
+        (func.coalesce(func.max(FlightORM.id), 0) + 1)
+    )
+    with Session(engine) as session:
+        next_id = session.scalar(get_next_id)
+
+        new_flight = FlightORM(
+            id=next_id,
+            flight_number=body.flight_number,
+            datetime=body.datetime,
+            from_airport_id=body.from_airport_id,
+            to_airport_id=body.to_airport_id,
+            price=body.price
+        )
+        session.add(new_flight)
+        session.commit()
+        return Response(
+            status_code=status.HTTP_201_CREATED,
+            headers={
+                "Location": f"/api/v1/flights/{body.flight_number}"
+            }
+    )
