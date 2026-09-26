@@ -23,6 +23,6 @@ class PrivilegeHistoryORM(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     privilege_id: Mapped[int] = mapped_column(ForeignKey("privilege.id"), nullable=True)
     ticket_uid: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    datetime: Mapped[dtime] = mapped_column(DateTime(timezone=True), nullabe=False)
+    datetime: Mapped[dtime] = mapped_column(DateTime(timezone=True), nullable=False)
     balance_diff: Mapped[int] = mapped_column(Integer, nullable=False)
-    opertaion_type: Mapped[OpTypes] = mapped_column(String(20), nullable=False)
+    operation_type: Mapped[OpTypes] = mapped_column(String(20), nullable=False)

@@ -1,4 +1,4 @@
-def get_all_privileges(client):
+def test_get_all_privileges(client):
     response = client.get("/api/v1/privileges")
 
     assert response.status_code == 200
@@ -22,7 +22,7 @@ def get_all_privileges(client):
         ]
     }
 
-def get_privilege(client):
+def test_get_privilege(client):
     response = client.get("/api/v1/privileges/1")
 
     assert response.status_code == 200
