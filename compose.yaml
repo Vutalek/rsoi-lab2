@@ -1,7 +1,14 @@
 services:
-  server:
+  flight_service:
     build:
       context: flight_service
+    environment:
+      FLIGHT_SERVICE_DB_PROTOCOL: ${FLIGHT_SERVICE_DB_PROTOCOL}
+      FLIGHT_SERVICE_DB_USER: ${FLIGHT_SERVICE_DB_USER}
+      FLIGHT_SERVICE_DB_PASSWORD: ${FLIGHT_SERVICE_DB_PASSWORD}
+      FLIGHT_SERVICE_DB_HOST: postgres
+      FLIGHT_SERVICE_DB_PORT: ${FLIGHT_SERVICE_DB_PORT}
+      FLIGHT_SERVICE_DB_NAME: ${FLIGHT_SERVICE_DB_NAME}
     ports:
       - 8060:8060
 
