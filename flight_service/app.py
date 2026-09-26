@@ -94,3 +94,14 @@ def update_flight(flight_number: str, body: FlightPatch):
         session.commit()
         session.refresh(flight)
     return flight
+
+@app.delete("/api/v1/flights/{flight_number}")
+def delete_flight(flight_number: str):
+    get_flight = select(FlightORM).where(FlightORM.flight_number == flight_number)
+    with Session(engine) as session:
+        flight = session.scalar(get_flight)
+
+        if flight is not None:
+            session.delete(flight)
+            session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

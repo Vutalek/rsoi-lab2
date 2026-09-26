@@ -84,7 +84,7 @@ def test_delete_flight(client):
 
     response = client.delete("/api/v1/flights/AFL130")
 
-    assert response.status_code == 200
+    assert response.status_code == 204
 
     response = client.get("/api/v1/flights/AFL130")
 
