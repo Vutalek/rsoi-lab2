@@ -7,8 +7,8 @@ from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
 from utils import construct_engine
-from orm import FlightORM
-from models import FlightPost, FlightPatch
+from orm import FlightORM, AirportORM
+from models import FlightPost, FlightPatch, AirportPost, AirportPatch
 
 app = FastAPI()
 
@@ -17,6 +17,10 @@ engine = construct_engine()
 @app.get("/manage/health")
 def health():
     return {"status": "healthy"}
+
+############################
+########## FLIGHTS #########
+############################
 
 @app.get("/api/v1/flights")
 def all_flights(page: int=1, size: Annotated[int, Query(ge=1, le=100)]=10):
@@ -103,5 +107,85 @@ def delete_flight(flight_number: str):
 
         if flight is not None:
             session.delete(flight)
+            session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+#############################
+########## AIRPORTS #########
+#############################
+
+@app.get("/api/v1/airports")
+def all_airports():
+    query = select(AirportORM)
+    with Session(engine) as session:
+        airports = session.scalars(query).all()
+    airports = [
+        {
+            "id": airport.id,
+            "name": airport.name,
+            "city": airport.city,
+            "country": airport.country
+        }
+        for airport in airports
+    ]
+    return airports
+
+@app.get("/api/v1/airports/{airport_id}")
+def get_airport(airport_id: int):
+    with Session(engine) as session:
+        airport = session.get(AirportORM, airport_id)
+        if not airport:
+            raise HTTPException(404, detail="Airport not found")
+    airport = {
+        "id": airport.id,
+        "name": airport.name,
+        "city": airport.city,
+        "country": airport.country
+    }
+    return airport
+
+@app.post("/api/v1/airports")
+def make_airport(body: AirportPost):
+    get_next_id = select(
+        (func.coalesce(func.max(AirportORM.id), 0) + 1)
+    )
+    with Session(engine) as session:
+        next_id = session.scalar(get_next_id)
+
+        new_airport = AirportORM(
+            id=next_id,
+            name=body.name,
+            city=body.city,
+            country=body.country
+        )
+        session.add(new_airport)
+        session.commit()
+        return Response(
+            status_code=status.HTTP_201_CREATED,
+            headers={
+                "Location": f"/api/v1/airports/{next_id}"
+            }
+    )
+
+@app.patch("/api/v1/airports/{airport_id}")
+def update_airport(airport_id: str, body: AirportPatch):
+    with Session(engine) as session:
+        airport = session.get(AirportORM, airport_id)
+        if not airport:
+            raise HTTPException(404, detail="Airport not found")
+        for field, value in body.model_dump(exclude_unset=True).items():
+            setattr(airport, field, value)
+
+        session.commit()
+        session.refresh(airport)
+    return airport
+
+@app.delete("/api/v1/airports/{airport_id}")
+def delete_airport(airport_id: str):
+    with Session(engine) as session:
+        airport = session.get(AirportORM, airport_id)
+
+        if airport is not None:
+            session.delete(airport)
             session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
