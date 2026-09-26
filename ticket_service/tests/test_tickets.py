@@ -2,19 +2,17 @@ def test_get_tickets_by_user(client):
     response = client.get("/api/v1/tickets/user/vuta")
 
     assert response.status_code == 200
-    assert response.json() == {
-        [
-            {
-                "ticketUid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                "flightNumber": "AFL031",
-                "price": 1500,
-                "status": "PAID",
-            }
-        ]
-    }
+    assert response.json() == [
+        {
+            "ticketUid": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+            "flightNumber": "AFL031",
+            "price": 1500,
+            "status": "PAID",
+        }
+    ]
 
 def test_get_ticket(client):
-    response = client.get("/api/v1/tickets/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    response = client.get("/api/v1/tickets/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
 
     assert response.status_code == 200
     assert response.json() == {
@@ -61,6 +59,8 @@ def test_cancel_ticket(client):
     assert response.json().get("status") == "PAID"
 
     response = client.post(f"/api/v1/tickets/cancel/{uid}")
+
+    assert response.json().get("status") == "CANCELED"
 
     response = client.get(f"/api/v1/tickets/{uid}")
     
