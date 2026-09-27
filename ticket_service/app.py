@@ -63,7 +63,7 @@ def buy_ticket(body: TicketPost):
             username=body.username,
             flight_number=body.username,
             price=body.price,
-            status="PAID"
+            status="INVOICE"
         )
         session.add(new_ticket)
         session.commit()
@@ -73,6 +73,19 @@ def buy_ticket(body: TicketPost):
             "Location": f"/api/v1/tickets/{new_uuid}"
         }
     )
+
+@app.post("/api/v1/tickets/pay/{ticket_uid}")
+def cancel_ticket(ticket_uid: UUID):
+    get_ticket = select(TicketORM).where(TicketORM.ticket_uid == ticket_uid)
+    with Session(engine) as session:
+        ticket = session.scalar(get_ticket)
+        if not ticket:
+            raise HTTPException(404, detail="Ticket not found")
+        ticket.status = "PAID"
+
+        session.commit()
+        session.refresh(ticket)
+    return ticket
 
 @app.post("/api/v1/tickets/cancel/{ticket_uid}")
 def cancel_ticket(ticket_uid: UUID):

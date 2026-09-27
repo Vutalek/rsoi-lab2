@@ -56,6 +56,20 @@ def get_privilege(p_id: int):
     }
     return privilege
 
+@app.get("/api/v1/privileges/user/{username}")
+def get_privilege_by_user(username: str):
+    query = select(PrivilegeORM).where(PrivilegeORM.username == username)
+    with Session(engine) as session:
+        privilege = session.scalar(query)
+        if not privilege:
+            raise HTTPException(404, detail="Privilege not found")
+    privilege = {
+        "id": privilege.id,
+        "balance": privilege.balance,
+        "status": privilege.status
+    }
+    return privilege
+
 @app.post("/api/v1/privileges")
 def make_privilege(body: PrivilegePost):
     get_next_id = select(
