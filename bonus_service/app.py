@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from utils import construct_engine
 from orm import PrivilegeORM, PrivilegeHistoryORM
-from models import PrivilegePost, PrivilegePatch
+from models import PrivilegePost, PrivilegePatch, HistoryPost
 
 app = FastAPI()
 
@@ -57,7 +57,7 @@ def get_privilege(p_id: int):
     return privilege
 
 @app.post("/api/v1/privileges")
-def make_airport(body: PrivilegePost):
+def make_privilege(body: PrivilegePost):
     get_next_id = select(
         (func.coalesce(func.max(PrivilegeORM.id), 0) + 1)
     )
@@ -80,7 +80,7 @@ def make_airport(body: PrivilegePost):
     )
 
 @app.patch("/api/v1/privileges/{p_id}")
-def update_airport(p_id: str, body: PrivilegePatch):
+def update_privilege(p_id: str, body: PrivilegePatch):
     with Session(engine) as session:
         privilege = session.get(PrivilegeORM, p_id)
         if not privilege:
@@ -93,7 +93,7 @@ def update_airport(p_id: str, body: PrivilegePatch):
     return privilege
 
 @app.delete("/api/v1/privileges/{p_id}")
-def delete_airport(p_id: str):
+def delete_privilege(p_id: str):
     with Session(engine) as session:
         privilege = session.get(PrivilegeORM, p_id)
 
@@ -122,3 +122,52 @@ def get_history(p_id: int):
         for h in history
     ]
     return history
+
+@app.get("/api/v1/history/entry/{e_id}")
+def get_history_entry(e_id: int):
+    with Session(engine) as session:
+        entry = session.get(PrivilegeHistoryORM, e_id)
+    entry = {
+        "privilege_id": entry.privilege_id,
+        "ticket_uid": entry.ticket_uid,
+        "datetime": entry.datetime,
+        "balance_diff": entry.balance_diff,
+        "operation_type": entry.operation_type
+    }
+    return entry
+
+@app.post("/api/v1/history/{p_id}")
+def make_history(p_id: int, body: HistoryPost):
+    get_next_id = select(
+        (func.coalesce(func.max(PrivilegeHistoryORM.id), 0) + 1)
+    )
+    with Session(engine) as session:
+        next_id = session.scalar(get_next_id)
+
+        new_entry = PrivilegeHistoryORM(
+            id=next_id,
+            privilege_id=p_id,
+            ticket_uid=body.ticket_uid,
+            datetime=body.datetime,
+            balance_diff=body.balance_diff,
+            operation_type=body.operation_type
+        )
+
+        privilege = session.get(PrivilegeORM, p_id)
+        if privilege is None:
+            raise HTTPException(404, detail="Privilege not found")
+
+        session.add(new_entry)
+
+        if new_entry.operation_type == "FILL_IN_BALANCE":
+            privilege.balance += new_entry.balance_diff
+        else:
+            privilege.balance -= new_entry.balance_diff
+            
+        session.commit()
+        return Response(
+            status_code=status.HTTP_201_CREATED,
+            headers={
+                "Location": f"/api/v1/history/entry/{next_id}"
+            }
+    )

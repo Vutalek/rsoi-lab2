@@ -1,10 +1,14 @@
+from typing import Literal
+
 from pydantic import BaseModel
+
+PrivilegeLevel = Literal["BRONZE", "SILVER", "GOLD"]
 
 
 class PrivilegePost(BaseModel):
     username: str
-    status: str | None = None
+    status: PrivilegeLevel | None = None
 
 class PrivilegePatch(BaseModel):
-    status: str | None = None
+    status: PrivilegeLevel | None = None
     balance: int | None = None
