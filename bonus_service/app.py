@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from utils import construct_engine
 from orm import PrivilegeORM, PrivilegeHistoryORM
+from models import PrivilegePost, PrivilegePatch
 
 app = FastAPI()
 
@@ -54,6 +55,52 @@ def get_privilege(p_id: int):
         "status": privilege.status
     }
     return privilege
+
+@app.post("/api/v1/privileges")
+def make_airport(body: PrivilegePost):
+    get_next_id = select(
+        (func.coalesce(func.max(PrivilegeORM.id), 0) + 1)
+    )
+    with Session(engine) as session:
+        next_id = session.scalar(get_next_id)
+
+        new_privilege = PrivilegeORM(
+            id=next_id,
+            username=body.username,
+            status = "BRONZE" if body.status is None else body.status,
+            balance=0
+        )
+        session.add(new_privilege)
+        session.commit()
+        return Response(
+            status_code=status.HTTP_201_CREATED,
+            headers={
+                "Location": f"/api/v1/privileges/{next_id}"
+            }
+    )
+
+@app.patch("/api/v1/privileges/{p_id}")
+def update_airport(p_id: str, body: PrivilegePatch):
+    with Session(engine) as session:
+        privilege = session.get(PrivilegeORM, p_id)
+        if not privilege:
+            raise HTTPException(404, detail="Privilege not found")
+        for field, value in body.model_dump(exclude_unset=True).items():
+            setattr(privilege, field, value)
+
+        session.commit()
+        session.refresh(privilege)
+    return privilege
+
+@app.delete("/api/v1/privileges/{p_id}")
+def delete_airport(p_id: str):
+    with Session(engine) as session:
+        privilege = session.get(PrivilegeORM, p_id)
+
+        if privilege is not None:
+            session.delete(privilege)
+            session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 #######################################
 ########## Privilege History ##########
