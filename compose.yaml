@@ -31,6 +31,22 @@ services:
       postgres:
         condition: service_started
 
+  bonus_service:
+    build:
+      context: bonus_service
+    environment:
+      BONUS_SERVICE_DB_PROTOCOL: ${BONUS_SERVICE_DB_PROTOCOL}
+      BONUS_SERVICE_DB_USER: ${BONUS_SERVICE_DB_USER}
+      BONUS_SERVICE_DB_PASSWORD: ${BONUS_SERVICE_DB_PASSWORD}
+      BONUS_SERVICE_DB_HOST: postgres
+      BONUS_SERVICE_DB_PORT: ${BONUS_SERVICE_DB_PORT}
+      BONUS_SERVICE_DB_NAME: ${BONUS_SERVICE_DB_NAME}
+    ports:
+      - 8050:8050
+    depends_on:
+      postgres:
+        condition: service_started
+
   postgres:
     image: postgres:18
     restart: on-failure
