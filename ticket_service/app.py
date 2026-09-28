@@ -61,7 +61,7 @@ def buy_ticket(body: TicketPost):
             id=next_id,
             ticket_uid=new_uuid,
             username=body.username,
-            flight_number=body.username,
+            flight_number=body.flight_number,
             price=body.price,
             status="INVOICE"
         )

@@ -42,7 +42,7 @@ def buy_ticket(x_user_name: Annotated[str, Header()], body: TicketBuyPost):
     # создаём билет
     ticket_uid = requests.post(
         ticket_service + "/api/v1/tickets",
-        body = {
+        json={
             "username": x_user_name,
             "flight_number": body.flightNumber,
             "price": body.price
@@ -66,7 +66,7 @@ def buy_ticket(x_user_name: Annotated[str, Header()], body: TicketBuyPost):
             paid_by_bonuses = privilege.json().get("balance", 0)
         requests.post(
             bonus_service + f"/api/v1/history/{privilege.json().get('id')}",
-            body = {
+            json={
                 "ticket_uid": ticket_uid,
                 "datetime": current_datetime,
                 "balance_diff": balance_diff,
@@ -76,7 +76,7 @@ def buy_ticket(x_user_name: Annotated[str, Header()], body: TicketBuyPost):
     else:
         requests.post(
             bonus_service + f"/api/v1/history/{privilege.json().get('id')}",
-            body = {
+            json={
                 "ticket_uid": ticket_uid,
                 "datetime": current_datetime,
                 "balance_diff": int(body.price * 0.1),
@@ -132,10 +132,10 @@ def get_ticket(ticket_uid: UUID, x_user_name: Annotated[str, Header()]):
 @app.delete("/api/v1/tickets/{ticket_uid}")
 def get_ticket(ticket_uid: UUID, x_user_name: Annotated[str, Header()]):
     response = requests.post(ticket_service + f"/api/v1/tickets/cancel/{ticket_uid}")
-    if response.status_code == 204:
+    if response.status_code == 200:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     else:
-        raise HTTPException("Ticket not found")
+        raise HTTPException(404, "Ticket not found")
 
 @app.get("/api/v1/me")
 def get_me(x_user_name: Annotated[str, Header()]):
@@ -176,7 +176,7 @@ def get_privilege(x_user_name: Annotated[str, Header()]):
         "status": privilege.get("status"),
         "history": [
             {
-                "date": h.get("date", ""),
+                "date": h.get("datetime", ""),
                 "ticketUid": h.get("ticket_uid", ""),
                 "balanceDiff": h.get("balance_diff", 0),
                 "operationType": h.get("operation_type", "")
