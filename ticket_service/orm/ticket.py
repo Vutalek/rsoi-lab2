@@ -7,14 +7,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 
-TicketStatus = Literal["PAID", "CANCELED"]
+TicketStatus = Literal["INVOICE", "PAID", "CANCELED"]
 
 class TicketORM(Base):
     __tablename__ = "ticket"
 
     __table_args__ = (
         CheckConstraint(
-            "status IN ('PAID', 'CANCELED')",
+            "status IN ('INVOICE', 'PAID', 'CANCELED')",
             name="ticket_status_check",
         ),
     )

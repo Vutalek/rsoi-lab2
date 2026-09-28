@@ -1,4 +1,21 @@
 services:
+  gateway_service:
+    build:
+      context: gateway_service
+    environment:
+      FLIGHT_SERVICE_HOST: ${FLIGHT_SERVICE_HOST}
+      TICKET_SERVICE_HOST: ${TICKET_SERVICE_HOST}
+      BONUS_SERVICE_HOST: ${BONUS_SERVICE_HOST}
+    ports:
+      - 8080:8080
+    depends_on:
+      flight_service:
+        condition: service_started
+      ticket_service:
+        condition: service_started
+      bonus_service:
+        condition: service_started
+
   flight_service:
     build:
       context: flight_service
