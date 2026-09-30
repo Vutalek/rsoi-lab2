@@ -111,6 +111,8 @@ jobs:
     name: Postman tests on VM
     needs: deploy
     runs-on: ubuntu-latest
+    env:
+      HAS_GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY != '' }}
     steps:
       - uses: actions/checkout@v3
 
@@ -152,6 +154,7 @@ jobs:
         continue-on-error: true
 
       - name: Github auto grader mark
+        if: env.HAS_GOOGLE_API_KEY == 'true'
         uses: Romanow/google-sheet-autograder-marker@v1.0
         with:
           google_token: ${{secrets.GOOGLE_API_KEY}}
