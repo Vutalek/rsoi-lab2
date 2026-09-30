@@ -62,20 +62,85 @@ jobs:
         timeout-minutes: 10
         run: docker compose build
 
-  postman:
-    name: Postman tests
+  deploy:
+    name: Deploy to VM
     needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Deploy via SSH
+        shell: bash
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+          VM_ENV: ${{ secrets.VM_ENV }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/deploy_known_hosts
+          SSH_OPTIONS=(
+            -i "$HOME/.ssh/deploy_key"
+            -p "$VM_PORT"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$HOME/.ssh/deploy_known_hosts"
+          )
+          TARGET="$VM_USER@$VM_HOST"
+          git archive --format=tar HEAD |
+            ssh "${SSH_OPTIONS[@]}" "$TARGET" \
+              'mkdir -p "$HOME/rsoi-lab2" && tar -xf - -C "$HOME/rsoi-lab2"'
+          printf '%s\n' "$VM_ENV" |
+            ssh "${SSH_OPTIONS[@]}" "$TARGET" \
+              'umask 077; cat > "$HOME/rsoi-lab2/.env"'
+          ssh "${SSH_OPTIONS[@]}" "$TARGET" '
+            set -e
+            cd "$HOME/rsoi-lab2"
+            docker compose up -d --build
+            WAIT_PORTS=8080,8070,8060,8050 ./scripts/wait-script.sh
+          '
+
+  postman:
+    name: Postman tests on VM
+    needs: deploy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
 
-      - name: Run containers
-        timeout-minutes: 15
-        run: |
-          docker compose up -d --build
-          ./scripts/wait-script.sh
+      - name: Connect to VM
+        shell: bash
         env:
-          WAIT_PORTS: 8080,8070,8060,8050
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_PORT: ${{ secrets.VM_PORT }}
+          VM_USER: ${{ secrets.VM_USER }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/deploy_known_hosts
+          SSH_OPTIONS=(
+            -i "$HOME/.ssh/deploy_key"
+            -p "$VM_PORT"
+            -o BatchMode=yes
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=yes
+            -o "UserKnownHostsFile=$HOME/.ssh/deploy_known_hosts"
+          )
+          TARGET="$VM_USER@$VM_HOST"
+          ssh "${SSH_OPTIONS[@]}" -o ExitOnForwardFailure=yes \
+            -f -N -L 127.0.0.1:8080:127.0.0.1:8080 "$TARGET"
+          WAIT_PORTS=8080 ./scripts/wait-script.sh
 
       - name: Run API Tests
         uses: matt-ball/newman-action@master
@@ -99,8 +164,3 @@ jobs:
           user_column: 'D'
           column_offset: 'F'
           mark: "'+"
-
-      - name: Stop containers
-        if: always()
-        continue-on-error: true
-        run: docker compose down -v
