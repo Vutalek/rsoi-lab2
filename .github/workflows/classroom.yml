@@ -80,20 +80,18 @@ jobs:
           VM_PORT: ${{ secrets.VM_PORT }}
           VM_USER: ${{ secrets.VM_USER }}
           VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
           VM_ENV: ${{ secrets.VM_ENV }}
         run: |
           umask 077
           mkdir -p ~/.ssh
           printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
-          printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/deploy_known_hosts
           SSH_OPTIONS=(
             -i "$HOME/.ssh/deploy_key"
             -p "$VM_PORT"
             -o BatchMode=yes
             -o IdentitiesOnly=yes
-            -o StrictHostKeyChecking=yes
-            -o "UserKnownHostsFile=$HOME/.ssh/deploy_known_hosts"
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null
           )
           TARGET="$VM_USER@$VM_HOST"
           git archive --format=tar HEAD |
@@ -123,19 +121,17 @@ jobs:
           VM_PORT: ${{ secrets.VM_PORT }}
           VM_USER: ${{ secrets.VM_USER }}
           VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-          VM_KNOWN_HOSTS: ${{ secrets.VM_KNOWN_HOSTS }}
         run: |
           umask 077
           mkdir -p ~/.ssh
           printf '%s\n' "$VM_SSH_KEY" > ~/.ssh/deploy_key
-          printf '%s\n' "$VM_KNOWN_HOSTS" > ~/.ssh/deploy_known_hosts
           SSH_OPTIONS=(
             -i "$HOME/.ssh/deploy_key"
             -p "$VM_PORT"
             -o BatchMode=yes
             -o IdentitiesOnly=yes
-            -o StrictHostKeyChecking=yes
-            -o "UserKnownHostsFile=$HOME/.ssh/deploy_known_hosts"
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null
           )
           TARGET="$VM_USER@$VM_HOST"
           ssh "${SSH_OPTIONS[@]}" -o ExitOnForwardFailure=yes \
