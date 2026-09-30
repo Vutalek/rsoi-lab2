@@ -8,9 +8,49 @@ on:
       - main
   workflow_dispatch:
 jobs:
-  build:
-    name: Deploy via SSH
+  tests:
+    name: Pytest
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run unit tests
+        run: |
+          for service in flight_service ticket_service bonus_service; do
+            (
+              cd "$service"
+              python -m pip install -r requirements.txt
+              python -m pytest
+            ) || exit 1
+          done
+
+  build:
+    name: Build and Postman tests
+    needs: tests
+    runs-on: ubuntu-latest
+    env:
+      FLIGHT_SERVICE_HOST: http://flight_service:8060
+      TICKET_SERVICE_HOST: http://ticket_service:8070
+      BONUS_SERVICE_HOST: http://bonus_service:8050
+      FLIGHT_SERVICE_DB_PROTOCOL: postgresql+psycopg2
+      FLIGHT_SERVICE_DB_USER: program
+      FLIGHT_SERVICE_DB_PASSWORD: test
+      FLIGHT_SERVICE_DB_PORT: "5432"
+      FLIGHT_SERVICE_DB_NAME: flights
+      TICKET_SERVICE_DB_PROTOCOL: postgresql+psycopg2
+      TICKET_SERVICE_DB_USER: program
+      TICKET_SERVICE_DB_PASSWORD: test
+      TICKET_SERVICE_DB_PORT: "5432"
+      TICKET_SERVICE_DB_NAME: tickets
+      BONUS_SERVICE_DB_PROTOCOL: postgresql+psycopg2
+      BONUS_SERVICE_DB_USER: program
+      BONUS_SERVICE_DB_PASSWORD: test
+      BONUS_SERVICE_DB_PORT: "5432"
+      BONUS_SERVICE_DB_NAME: privileges
     steps:
       - uses: actions/checkout@v3
         with:
