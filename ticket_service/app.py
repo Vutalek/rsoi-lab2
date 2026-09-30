@@ -75,7 +75,7 @@ def buy_ticket(body: TicketPost):
     )
 
 @app.post("/api/v1/tickets/pay/{ticket_uid}")
-def cancel_ticket(ticket_uid: UUID):
+def pay_ticket(ticket_uid: UUID):
     get_ticket = select(TicketORM).where(TicketORM.ticket_uid == ticket_uid)
     with Session(engine) as session:
         ticket = session.scalar(get_ticket)

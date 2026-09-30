@@ -53,6 +53,7 @@ def test_cancel_ticket(client):
     )
 
     uid = response.headers["location"].split('/')[-1]
+    response = client.post(f"/api/v1/tickets/pay/{uid}")
 
     response = client.get(f"/api/v1/tickets/{uid}")
 
