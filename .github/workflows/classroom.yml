@@ -7,6 +7,25 @@ on:
     branches:
       - main
   workflow_dispatch:
+env:
+  FLIGHT_SERVICE_HOST: http://flight_service:8060
+  TICKET_SERVICE_HOST: http://ticket_service:8070
+  BONUS_SERVICE_HOST: http://bonus_service:8050
+  FLIGHT_SERVICE_DB_PROTOCOL: postgresql+psycopg2
+  FLIGHT_SERVICE_DB_USER: program
+  FLIGHT_SERVICE_DB_PASSWORD: test
+  FLIGHT_SERVICE_DB_PORT: "5432"
+  FLIGHT_SERVICE_DB_NAME: flights
+  TICKET_SERVICE_DB_PROTOCOL: postgresql+psycopg2
+  TICKET_SERVICE_DB_USER: program
+  TICKET_SERVICE_DB_PASSWORD: test
+  TICKET_SERVICE_DB_PORT: "5432"
+  TICKET_SERVICE_DB_NAME: tickets
+  BONUS_SERVICE_DB_PROTOCOL: postgresql+psycopg2
+  BONUS_SERVICE_DB_USER: program
+  BONUS_SERVICE_DB_PASSWORD: test
+  BONUS_SERVICE_DB_PORT: "5432"
+  BONUS_SERVICE_DB_NAME: privileges
 jobs:
   tests:
     name: Pytest
@@ -29,28 +48,9 @@ jobs:
           done
 
   build:
-    name: Build and Postman tests
+    name: Build
     needs: tests
     runs-on: ubuntu-latest
-    env:
-      FLIGHT_SERVICE_HOST: http://flight_service:8060
-      TICKET_SERVICE_HOST: http://ticket_service:8070
-      BONUS_SERVICE_HOST: http://bonus_service:8050
-      FLIGHT_SERVICE_DB_PROTOCOL: postgresql+psycopg2
-      FLIGHT_SERVICE_DB_USER: program
-      FLIGHT_SERVICE_DB_PASSWORD: test
-      FLIGHT_SERVICE_DB_PORT: "5432"
-      FLIGHT_SERVICE_DB_NAME: flights
-      TICKET_SERVICE_DB_PROTOCOL: postgresql+psycopg2
-      TICKET_SERVICE_DB_USER: program
-      TICKET_SERVICE_DB_PASSWORD: test
-      TICKET_SERVICE_DB_PORT: "5432"
-      TICKET_SERVICE_DB_NAME: tickets
-      BONUS_SERVICE_DB_PROTOCOL: postgresql+psycopg2
-      BONUS_SERVICE_DB_USER: program
-      BONUS_SERVICE_DB_PASSWORD: test
-      BONUS_SERVICE_DB_PORT: "5432"
-      BONUS_SERVICE_DB_NAME: privileges
     steps:
       - uses: actions/checkout@v3
         with:
@@ -62,10 +62,17 @@ jobs:
         timeout-minutes: 10
         run: docker compose build
 
+  postman:
+    name: Postman tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
       - name: Run containers
-        timeout-minutes: 5
+        timeout-minutes: 15
         run: |
-          docker compose up -d
+          docker compose up -d --build
           ./scripts/wait-script.sh
         env:
           WAIT_PORTS: 8080,8070,8060,8050
