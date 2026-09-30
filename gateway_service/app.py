@@ -23,7 +23,7 @@ def health():
 def get_all_flights(page: int=1, size: Annotated[int, Query(ge=1, le=100)]=10):
     return requests.get(flight_service + f"/api/v1/flights?page={page}&size={size}").json()
 
-@app.get("/api/v1/tickets/")
+@app.get("/api/v1/tickets")
 def get_all_user_tickets(x_user_name: Annotated[str, Header()]):
     tickets = requests.get(ticket_service + f"/api/v1/tickets/user/{x_user_name}").json()
     extended_tickets = []
